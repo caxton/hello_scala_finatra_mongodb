@@ -1,0 +1,1 @@
+# hello_scala_finatra_mongodb
