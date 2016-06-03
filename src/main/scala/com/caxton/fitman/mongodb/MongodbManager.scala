@@ -17,15 +17,19 @@ import scala.concurrent.{Await, Future}
   * Created by Caxton on 2016/6/3.
   */
 class MongodbManager private {
+  val MONGODB_URI = "mongodb://localhost/";
+  val MONGODB_DB_NAME = "finatra_user"
+  val MONGODB_COLLECTION_USER = "user"
+
   val KEY_USER = "user"
   val KEY_WEIGHT = "weight"
 
   val DEFAULT_AWAIT_TIMEOUT = 10
   val DEFAULT_AWAIT_TIME_UNIT = TimeUnit.SECONDS
 
-  val mMongoClient: MongoClient = MongoClient("mongodb://localhost/")
-  val mDatabase: MongoDatabase = mMongoClient.getDatabase("finatra_user")
-  val mCollection: MongoCollection[Document] = mDatabase.getCollection("user")
+  val mMongoClient: MongoClient = MongoClient(MONGODB_URI)
+  val mDatabase: MongoDatabase = mMongoClient.getDatabase(MONGODB_DB_NAME)
+  val mCollection: MongoCollection[Document] = mDatabase.getCollection(MONGODB_COLLECTION_USER)
 
   val mFuturePool = FuturePools.unboundedPool("CallbackConverter")
 
@@ -40,14 +44,14 @@ class MongodbManager private {
   }
 
   def findOne(tag: String, value: String): String = {
-    val futureUsers: Future[Seq[Document]] = mCollection.find(equal(tag, value))
-      .projection(fields(include(KEY_USER, KEY_WEIGHT), excludeId())).first().toFuture()
-    val res: Seq[Document] = Await.result(futureUsers, Duration(DEFAULT_AWAIT_TIMEOUT, DEFAULT_AWAIT_TIME_UNIT))
     var result: String = new String("");
-    if (res.length > 0) {
-      res.foreach(
-        res => result = res.toJson()
-      )
+    try {
+      result = mCollection.find(equal(tag, value))
+        .projection(fields(include(KEY_USER, KEY_WEIGHT), excludeId())).headResult().toJson()
+    } catch {
+      case ex: IllegalStateException => {
+        println(ex.getMessage)
+      }
     }
     result
   }
@@ -56,14 +60,41 @@ class MongodbManager private {
     mCollection.insertOne(document).results()
   }
 
+  def updateOne(document: Document): Unit = {
+    try {
+      val userObj: BsonString = document.get(KEY_USER).get.asInstanceOf[BsonString]
+      val weightObj: BsonString = document.get(KEY_WEIGHT).get.asInstanceOf[BsonString]
+      mCollection.updateOne(equal(KEY_USER, userObj.getValue), set(KEY_WEIGHT, weightObj.getValue)).results()
+    }
+    catch {
+      case ex: Exception => {
+        println(ex.getMessage)
+      }
+    }
+  }
+
   def updateOne(document: Document, upTag: String, upValue: Int): Unit = {
-    val bsonObj: BsonString = document.get(KEY_USER).get.asInstanceOf[BsonString]
-    mCollection.updateOne(equal(KEY_USER, bsonObj.getValue), set(upTag, upValue)).results()
+    try {
+      val userObj: BsonString = document.get(KEY_USER).get.asInstanceOf[BsonString]
+      mCollection.updateOne(equal(KEY_USER, userObj.getValue), set(upTag, upValue)).results()
+    }
+    catch {
+      case ex: Exception => {
+        println(ex.getMessage)
+      }
+    }
   }
 
   def updateOne(document: Document, upTag: String, upValue: String): Unit = {
-    val bsonObj: BsonString = document.get(KEY_USER).get.asInstanceOf[BsonString]
-    mCollection.updateOne(equal(KEY_USER, bsonObj.getValue), set(upTag, upValue)).results()
+    try {
+      val userObj: BsonString = document.get(KEY_USER).get.asInstanceOf[BsonString]
+      mCollection.updateOne(equal(KEY_USER, userObj.getValue), set(upTag, upValue)).results()
+    }
+    catch {
+      case ex: Exception => {
+        println(ex.getMessage)
+      }
+    }
   }
 
   def deleteOne(tag: String, value: String): Unit = {

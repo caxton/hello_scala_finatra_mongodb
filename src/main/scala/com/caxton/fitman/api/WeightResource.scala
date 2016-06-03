@@ -65,7 +65,7 @@ class WeightResource extends Controller with Logging {
         }
         else {
           println("find matched record!")
-          mongodbManager.updateOne(doc, mongodbManager.KEY_WEIGHT, weight.weight)
+          mongodbManager.updateOne(doc)
         }
         response.created.location(s"/weights/${weight.user}")
       }
