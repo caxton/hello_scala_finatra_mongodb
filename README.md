@@ -3,7 +3,7 @@ The sample project demonstrate how to integrate Scala and MongoDB
 
 ## Prerequisite
 You can get information how to setup a Scala project with Finatra:
-https://github.com/caxton/52-technologies-in-2016/edit/master/01-finatra/README.md
+https://github.com/caxton/52-technologies-in-2016/tree/master/01-finatra
 
 ##Install MongoDB
 ### Step 1: Install MongoDB
