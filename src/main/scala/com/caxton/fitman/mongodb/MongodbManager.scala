@@ -2,6 +2,7 @@ package com.caxton.fitman.mongodb
 
 import java.util.concurrent.TimeUnit
 
+import com.caxton.fitman.api.Weight
 import com.caxton.fitman.mongodb.MongodbHelpers._
 import com.twitter.finatra.utils.FuturePools
 import org.mongodb.scala._
@@ -23,6 +24,8 @@ class MongodbManager private {
 
   val KEY_USER = "user"
   val KEY_WEIGHT = "weight"
+  val KEY_STATUS = "status"
+  val KEY_POSTED_AT = "posted_at"
 
   val DEFAULT_AWAIT_TIMEOUT = 10
   val DEFAULT_AWAIT_TIME_UNIT = TimeUnit.SECONDS
@@ -104,9 +107,18 @@ class MongodbManager private {
   def close(): Unit = {
     mMongoClient.close()
   }
+
+  def getDocFromWeight(weight: Weight): Document = {
+    Document(
+      KEY_USER -> weight.user,
+      KEY_WEIGHT -> weight.weight,
+      KEY_STATUS -> weight.status,
+      KEY_POSTED_AT -> weight.postedAt.toDate)
+  }
 }
 
 object MongodbManager {
   private val mongodbManager = new MongodbManager
+
   def apply() = mongodbManager
 }
