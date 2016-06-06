@@ -1,5 +1,5 @@
-# Sample project to integrate Scala and MongoDB
-The sample project demonstrate how to integrate Scala and MongoDB
+# Getting started with MongoDB and Scala
+The simple project demonstrate how to integrate Scala and MongoDB via [MongoDB Scala Driver] (https://mongodb.github.io/mongo-scala-driver/)
 
 ## Prerequisite
 You can get information how to setup a Scala project with Finatra:
