@@ -46,3 +46,27 @@ libraryDependencies += "org.mongodb.scala" %% "mongo-scala-driver" % "1.1.1"
 ### Step 2: Follow the smaple code to build up your project
 
 MongoDB Scala Driver [Quick Tour] (http://mongodb.github.io/mongo-scala-driver/1.1/getting-started/quick-tour/).
+
+
+##appendix
+### Using cURL to automate HTTP jobs
+
+get all users' weight
+```
+curl -i http://localhost:8888/mongodb/weights
+```
+
+get someone's weight
+```
+curl -i http://localhost:8888/mongodb/weights/user_name
+```
+
+create/update an user
+```
+curl -H "Content-Type: application/json" -i http://localhost:8888/mongodb/weights -X POST -d '{"user":"Simon","weight":"100","status":"awesome","posted_at":"2016-01-03T14:34:06.871Z"}'
+```
+
+delete an user
+```
+curl -i http://localhost:8888/mongodb/weights/del/user_name
+```
