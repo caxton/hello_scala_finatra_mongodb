@@ -6,7 +6,6 @@ import com.twitter.finatra.http.Controller
 import com.twitter.finatra.validation.{Range, Size}
 import com.twitter.inject.Logging
 import org.joda.time.Instant
-import org.mongodb.scala._
 
 import scala.collection.mutable
 
@@ -16,6 +15,7 @@ import scala.collection.mutable
 class WeightResource extends Controller with Logging {
   val db = mutable.Map[String, List[Weight]]()
   val mongodbManager = MongodbManager()
+  val KEY_USER = mongodbManager.KEY_USER
 
   get("/weights") { request: Request =>
     info("finding all weights for all users...")
@@ -23,8 +23,8 @@ class WeightResource extends Controller with Logging {
   }
 
   get("/weights/:user") { request: Request =>
-    info( s"""finding weight for user ${request.params("user")}""")
-    db.getOrElse(request.params("user"), List())
+    info( s"""finding weight for user ${request.params(KEY_USER)}""")
+    db.getOrElse(request.params(KEY_USER), List())
   }
 
   post("/weights") {
@@ -46,20 +46,16 @@ class WeightResource extends Controller with Logging {
   }
 
   get("/mongodb/weights/:user") { request: Request =>
-    info( s"""finding weight for user ${request.params("user")}""")
-    "[" + mongodbManager.findOne(mongodbManager.KEY_USER, request.params("user")) + "]"
+    info( s"""finding weight for user ${request.params(KEY_USER)}""")
+    "[" + mongodbManager.findOne(KEY_USER, request.params(KEY_USER)) + "]"
   }
 
   post("/mongodb/weights") {
     weight: Weight =>
       val r = time(s"Total time take to post weight for user '${weight.user}' is %d ms(mongoDB)") {
-        val doc: Document = Document(
-          "user" -> weight.user,
-          "weight" -> weight.weight,
-          "status" -> weight.status,
-          "posted_at" -> weight.postedAt.toDate)
+        val doc = mongodbManager.getDocFromWeight(weight)
 
-        if (mongodbManager.findOne(mongodbManager.KEY_USER, weight.user).isEmpty) {
+        if (mongodbManager.findOne(KEY_USER, weight.user).isEmpty) {
           println("no matched record!")
           mongodbManager.insertOne(doc)
         }
@@ -73,8 +69,8 @@ class WeightResource extends Controller with Logging {
   }
 
   get("/mongodb/weights/del/:user") { request: Request =>
-    info( s"""delete a user ${request.params("user")}""")
-    mongodbManager.deleteOne(mongodbManager.KEY_USER, request.params("user"))
+    info( s"""delete a user ${request.params(KEY_USER)}""")
+    mongodbManager.deleteOne(KEY_USER, request.params(KEY_USER))
     response.ok()
   }
 }
