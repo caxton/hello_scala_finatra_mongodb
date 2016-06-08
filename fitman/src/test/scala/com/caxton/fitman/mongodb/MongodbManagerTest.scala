@@ -12,6 +12,7 @@ import scala.util.Random
   * Created by Caxton on 2016/6/8.
   */
 class MongodbManagerTest extends FlatSpec with Matchers {
+  val EmptyString = ""
   val mongodbManager = MongodbManager()
   val randomUser = new BigInteger(130, new SecureRandom()).toString(32).substring(0, 24)
   val weight = Random.nextInt(100) + 25
@@ -28,7 +29,7 @@ class MongodbManagerTest extends FlatSpec with Matchers {
   "query with non empty collection or inserted user" should "not return empty" in {
     mongodbManager.insertOne(doc)
     mongodbManager.find() should not be ("")
-    mongodbManager.findOne(mongodbManager.KEY_USER, randomUser) should not be ("")
+    mongodbManager.findOne(mongodbManager.KEY_USER, randomUser) should not be EmptyString
   }
 
   "the result of query a replaced user" should "include it user name" in {
@@ -38,6 +39,6 @@ class MongodbManagerTest extends FlatSpec with Matchers {
 
   "query the deleted user" should "return empty" in {
     mongodbManager.deleteOne(mongodbManager.KEY_USER, randomUser)
-    mongodbManager.findOne(mongodbManager.KEY_USER, randomUser) should be ("")
+    mongodbManager.findOne(mongodbManager.KEY_USER, randomUser) should be (EmptyString)
   }
 }

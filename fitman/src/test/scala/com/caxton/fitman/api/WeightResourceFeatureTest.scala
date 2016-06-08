@@ -9,6 +9,8 @@ import com.twitter.finatra.http.test.EmbeddedHttpServer
 import com.twitter.inject.server.FeatureTest
 import org.joda.time.Instant
 
+import scala.util.Random
+
 /**
   * Created by Caxton on 2016/5/26.
   */
@@ -98,7 +100,7 @@ class WeightResourceFeatureTest extends FeatureTest {
     val randomUser = new BigInteger(130, new SecureRandom())
       .toString(32).substring(0, 24)
 
-    "List specific weight for a user when GET request is made (MongoDB)" in {
+    "Add an user when POST request is made (MongoDB)" in {
       val randomTime = Instant.now()
 
       val response = server.httpPost(
@@ -129,9 +131,69 @@ class WeightResourceFeatureTest extends FeatureTest {
       )
     }
 
-    "Delete a specific user (MongoDB)" in {
-      server.httpGet(
-        path = s"/mongodb/weights/del/${randomUser}",
+//    "Update user weight when PATCH request is made (MongoDB)" in {
+//      val randomWeight = Random.nextInt(100) + 25
+//      server.httpPatchJson(
+//        path = "/mongodb/weights",
+//        patchBody =
+//          s"""
+//             |{
+//             |"user":"${randomUser}",
+//             |"weight":${randomWeight}
+//             |}
+//          """.stripMargin,
+//        andExpect = Status.Ok
+//      )
+//
+//      server.httpGetJson[List[Weight]](
+//        path = s"/mongodb/weights/:${randomUser}",
+//        andExpect = Status.Ok,
+//        withJsonBody =
+//          s"""
+//             |[
+//             |  {
+//             |    "user" : "${randomUser}",
+//             |    "weight" : 75
+//             |  }
+//             |]
+//          """.stripMargin
+//      )
+//    }
+
+    "Update an user when PUT request is made (MongoDB)" in {
+      val randomTime = Instant.now()
+      val randomWeight = Random.nextInt(100) + 25
+      server.httpPut(
+        path = "/mongodb/weights",
+        putBody =
+          s"""
+             |{
+             |"user":"${randomUser}",
+             |"weight":${randomWeight},
+             |"posted_at" : "${randomTime}"
+             |}
+          """.stripMargin,
+        andExpect = Status.Ok
+      )
+
+      server.httpGetJson[List[Weight]](
+        path = s"/mongodb/weights/${randomUser}",
+        andExpect = Status.Ok,
+        withJsonBody =
+          s"""
+             |[
+             |  {
+             |    "user" : "${randomUser}",
+             |    "weight" : ${randomWeight}
+             |  }
+             |]
+          """.stripMargin
+      )
+    }
+
+    "Delete an user (MongoDB)" in {
+      server.httpDelete(
+        path = s"/mongodb/weights/${randomUser}",
         andExpect = Status.Ok
       )
 

@@ -62,25 +62,38 @@ class WeightResource extends Controller with Logging {
     weight: Weight =>
       val doc = mongodbManager.getDocFromWeight(weight)
       mFuturePool {
+        mongodbManager.insertOne(doc)
+        response.created.location(s"/mongodb/weights/${weight.user}")
+      }
+  }
+
+
+//  patch("/mongodb/weights") {
+//    weight: Weight =>
+//      val doc = mongodbManager.getDocFromWeight(weight)
+//      mFuturePool {
+//        mongodbManager.updateOne(doc)
+//        response.ok
+//      }
+//  }
+
+  put("/mongodb/weights") {
+    weight: Weight =>
+      val doc = mongodbManager.getDocFromWeight(weight)
+      mFuturePool {
         val r = time(s"Total time take to post weight for user '${weight.user}' is %d ms(mongoDB)") {
-          //        if (mongodbManager.findOne(KEY_USER, weight.user).isEmpty) {
-          //          mongodbManager.insertOne(doc)
-          //        }
-          //        else {
-          //          mongodbManager.updateOne(doc)
-          //        }
-          mongodbManager.replaceOne(doc) //insert document if the user is not existed, otherwise replace it
-          response.created.location(s"/mongodb/weights/${weight.user}")
+          mongodbManager.replaceOne(doc)
+          response.ok
         }
         r
       }
   }
 
-  get("/mongodb/weights/del/:user") { request: Request =>
+  delete("/mongodb/weights/:user") { request: Request =>
     info( s"""delete a user ${request.params(KEY_USER)}""")
     mFuturePool {
       mongodbManager.deleteOne(KEY_USER, request.params(KEY_USER))
-      response.ok()
+      response.ok
     }
   }
 }
