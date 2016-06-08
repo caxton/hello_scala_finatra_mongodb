@@ -54,12 +54,6 @@ class WeightResource extends Controller with Logging {
   get("/mongodb/weights/:user") { request: Request =>
     info( s"""finding weight for user ${request.params(KEY_USER)}""")
     mFuturePool {
-      val randomTime = Instant.now()
-      println(randomTime)
-      println(Instant.now().toDateTime)
-      println(Instant.now().toDate.getTime)
-
-
       "[" + mongodbManager.findOne(KEY_USER, request.params(KEY_USER)) + "]"
     }
   }
