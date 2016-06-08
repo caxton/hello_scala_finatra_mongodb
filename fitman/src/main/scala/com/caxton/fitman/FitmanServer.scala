@@ -6,6 +6,7 @@ import com.twitter.finatra.http.filters.CommonFilters
 import com.twitter.finatra.http.routing.HttpRouter
 import com.twitter.finatra.http.{Controller, HttpServer}
 
+
 object FitmanApp extends FitmanServer
 
 /**

@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import com.caxton.fitman.api.Weight
 import com.caxton.fitman.mongodb.MongodbHelpers._
-import com.twitter.finatra.utils.FuturePools
+import com.mongodb.client.model.UpdateOptions
 import org.mongodb.scala._
 import org.mongodb.scala.bson.BsonString
 import org.mongodb.scala.model.Filters._
@@ -34,16 +34,17 @@ class MongodbManager private {
   val mDatabase: MongoDatabase = mMongoClient.getDatabase(MONGODB_DB_NAME)
   val mCollection: MongoCollection[Document] = mDatabase.getCollection(MONGODB_COLLECTION_USER)
 
-  val mFuturePool = FuturePools.unboundedPool("CallbackConverter")
-
   def find(): String = {
     val futureUsers: Future[Seq[Document]] = mCollection.find().projection(excludeId()).toFuture()
     val res: Seq[Document] = Await.result(futureUsers, Duration(DEFAULT_AWAIT_TIMEOUT, DEFAULT_AWAIT_TIME_UNIT))
-    var results: String = new String("");
+    val stringBuilder = StringBuilder.newBuilder
     res.foreach(
-      user => results += user.toJson().toString
+      user => {
+        stringBuilder.append(if(stringBuilder == "") "" else ", ")
+        stringBuilder.append(user.toJson().toString)
+      }
     )
-    results
+    stringBuilder.toString()
   }
 
   def findOne(tag: String, value: String): String = {
@@ -76,22 +77,11 @@ class MongodbManager private {
     }
   }
 
-  def updateOne(document: Document, upTag: String, upValue: Int): Unit = {
+  def replaceOne(document: Document): Unit = {
     try {
       val userObj: BsonString = document.get(KEY_USER).get.asInstanceOf[BsonString]
-      mCollection.updateOne(equal(KEY_USER, userObj.getValue), set(upTag, upValue)).results()
-    }
-    catch {
-      case ex: Exception => {
-        println(ex.getMessage)
-      }
-    }
-  }
-
-  def updateOne(document: Document, upTag: String, upValue: String): Unit = {
-    try {
-      val userObj: BsonString = document.get(KEY_USER).get.asInstanceOf[BsonString]
-      mCollection.updateOne(equal(KEY_USER, userObj.getValue), set(upTag, upValue)).results()
+      val updateOpts = (new UpdateOptions()).upsert(true)
+      mCollection.replaceOne(equal(KEY_USER, userObj.getValue), document, updateOpts).results()
     }
     catch {
       case ex: Exception => {
