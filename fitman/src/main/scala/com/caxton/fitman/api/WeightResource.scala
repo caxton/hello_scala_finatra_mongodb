@@ -3,6 +3,7 @@ package com.caxton.fitman.api
 import com.caxton.fitman.mongodb.MongodbManager
 import com.twitter.finagle.http.Request
 import com.twitter.finatra.http.Controller
+import com.twitter.finatra.utils.FuturePools
 import com.twitter.finatra.validation.{Range, Size}
 import com.twitter.inject.Logging
 import org.joda.time.Instant
@@ -16,6 +17,9 @@ class WeightResource extends Controller with Logging {
   val db = mutable.Map[String, List[Weight]]()
   val mongodbManager = MongodbManager()
   val KEY_USER = mongodbManager.KEY_USER
+
+  //see http://twitter.github.io/finatra/user-guide/build-new-http-server/controller.html#requests
+  val mFuturePool = FuturePools.unboundedPool("CallbackConverter")
 
   get("/weights") { request: Request =>
     info("finding all weights for all users...")
@@ -42,36 +46,48 @@ class WeightResource extends Controller with Logging {
 
   get("/mongodb/weights") { request: Request =>
     info("finding all weights for all users...")
-    "[" + mongodbManager.find() + "]"
+    mFuturePool {
+      "[" + mongodbManager.find() + "]"
+    }
   }
 
   get("/mongodb/weights/:user") { request: Request =>
     info( s"""finding weight for user ${request.params(KEY_USER)}""")
-    "[" + mongodbManager.findOne(KEY_USER, request.params(KEY_USER)) + "]"
+    mFuturePool {
+      val randomTime = Instant.now()
+      println(randomTime)
+      println(Instant.now().toDateTime)
+      println(Instant.now().toDate.getTime)
+
+
+      "[" + mongodbManager.findOne(KEY_USER, request.params(KEY_USER)) + "]"
+    }
   }
 
   post("/mongodb/weights") {
     weight: Weight =>
-      val r = time(s"Total time take to post weight for user '${weight.user}' is %d ms(mongoDB)") {
-        val doc = mongodbManager.getDocFromWeight(weight)
-
-        if (mongodbManager.findOne(KEY_USER, weight.user).isEmpty) {
-          println("no matched record!")
-          mongodbManager.insertOne(doc)
+      val doc = mongodbManager.getDocFromWeight(weight)
+      mFuturePool {
+        val r = time(s"Total time take to post weight for user '${weight.user}' is %d ms(mongoDB)") {
+          //        if (mongodbManager.findOne(KEY_USER, weight.user).isEmpty) {
+          //          mongodbManager.insertOne(doc)
+          //        }
+          //        else {
+          //          mongodbManager.updateOne(doc)
+          //        }
+          mongodbManager.replaceOne(doc) //insert document if the user is not existed, otherwise replace it
+          response.created.location(s"/mongodb/weights/${weight.user}")
         }
-        else {
-          println("find matched record!")
-          mongodbManager.updateOne(doc)
-        }
-        response.created.location(s"/weights/${weight.user}")
+        r
       }
-      r
   }
 
   get("/mongodb/weights/del/:user") { request: Request =>
     info( s"""delete a user ${request.params(KEY_USER)}""")
-    mongodbManager.deleteOne(KEY_USER, request.params(KEY_USER))
-    response.ok()
+    mFuturePool {
+      mongodbManager.deleteOne(KEY_USER, request.params(KEY_USER))
+      response.ok()
+    }
   }
 }
 

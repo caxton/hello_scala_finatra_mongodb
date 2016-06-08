@@ -1,9 +1,13 @@
 package com.caxton.fitman.api
 
+import java.math.BigInteger
+import java.security.SecureRandom
+
 import com.caxton.fitman.FitmanServer
 import com.twitter.finagle.http.Status
 import com.twitter.finatra.http.test.EmbeddedHttpServer
 import com.twitter.inject.server.FeatureTest
+import org.joda.time.Instant
 
 /**
   * Created by Caxton on 2016/5/26.
@@ -60,35 +64,6 @@ class WeightResourceFeatureTest extends FeatureTest {
       )
     }
 
-    "List specific weight for a user when GET request is made(Mongodb)" in {
-      val response = server.httpPost(
-        path = "/mongodb/weights",
-        postBody =
-          """
-            |{
-            |"user":"test_user_2",
-            |"weight":100,
-            |"posted_at" : "2016-01-03T14:34:06.871Z"
-            |}
-          """.stripMargin,
-        andExpect = Status.Created
-      )
-
-      server.httpGetJson[List[Weight]](
-        path = "/mongodb/weights/test_user_2",
-        andExpect = Status.Ok,
-        withJsonBody =
-          """
-            |[
-            |  {
-            |    "user" : "test_user_2",
-            |    "weight":100
-            |  }
-            |]
-          """.stripMargin
-      )
-    }
-
     "Bad request when user is not present in request" in {
       server.httpPost(
         path = "/weights",
@@ -120,10 +95,51 @@ class WeightResourceFeatureTest extends FeatureTest {
       )
     }
 
-    "Delete a specific user" in {
+    val randomUser = new BigInteger(130, new SecureRandom())
+      .toString(32).substring(0, 24)
+
+    "List specific weight for a user when GET request is made (MongoDB)" in {
+      val randomTime = Instant.now()
+
+      val response = server.httpPost(
+        path = "/mongodb/weights",
+        postBody =
+          s"""
+             |{
+             |"user":"${randomUser}",
+             |"weight":100,
+             |"posted_at" : "${randomTime}"
+             |}
+          """.stripMargin,
+        andExpect = Status.Created
+      )
+
+      server.httpGetJson[List[Weight]](
+        path = response.location.get,
+        andExpect = Status.Ok,
+        withJsonBody =
+          s"""
+             |[
+             |  {
+             |    "user" : "${randomUser}",
+             |    "weight" : 100
+             |  }
+             |]
+          """.stripMargin
+      )
+    }
+
+    "Delete a specific user (MongoDB)" in {
       server.httpGet(
-        path = "/mongodb/weights/del/test_user_2",
+        path = s"/mongodb/weights/del/${randomUser}",
         andExpect = Status.Ok
+      )
+
+      server.httpGet(
+        path = s"/mongodb/weights/${randomUser}",
+        andExpect = Status.Ok,
+        withBody =
+          "[]"
       )
     }
   }
