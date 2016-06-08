@@ -61,12 +61,17 @@ get someone's weight
 curl -i http://localhost:8888/mongodb/weights/user_name
 ```
 
-create/update an user
+create an user
 ```
 curl -H "Content-Type: application/json" -i http://localhost:8888/mongodb/weights -X POST -d '{"user":"Simon","weight":"100","status":"awesome","posted_at":"2016-01-03T14:34:06.871Z"}'
 ```
 
+update an user
+```
+curl -H "Content-Type: application/json" -i http://localhost:8888/mongodb/weights -X PUT -d '{"user":"Simon","weight":"70","status":"cool","posted_at":"2016-06-08T14:34:06.871Z"}'
+```
+
 delete an user
 ```
-curl -i http://localhost:8888/mongodb/weights/del/user_name
+curl -i -X DELETE http://localhost:8888/mongodb/weights/user_name
 ```
